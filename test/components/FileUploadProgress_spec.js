@@ -18,7 +18,7 @@ describe('Test of FileUploadProgress', () => {
     expect(component.props.onLoad).to.be.a('function');
     expect(component.props.onError).to.be.a('function');
     expect(component.props.onAbort).to.be.a('function');
-    expect(component.props.formGetter).to.be.a('undefined');
+    expect(component.props.formGetter).to.be.a('null');
     expect(component.props.formRenderer).to.be.a('function');
     expect(component.props.progressRenderer).to.be.a('function');
     expect(component.props.formCustomizer).to.be.a('function');

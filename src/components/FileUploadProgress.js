@@ -1,9 +1,8 @@
-'use strict';
-
+/* eslint-env browser */
+/* eslint-disable no-underscore-dangle,no-unused-vars */
 import { EventEmitter } from 'events';
 import React from 'react';
 import PropTypes from 'prop-types';
-import ReactDom from 'react-dom';
 import objectAssign from 'object-assign';
 
 const styles = {
@@ -61,14 +60,6 @@ class FileUploadProgress extends React.Component {
     };
   }
 
-  cancelUpload() {
-    this.proxy.emit('abort');
-    this.setState({
-      progress: -1,
-      hasError: false,
-    });
-  }
-
   onSubmit(e) {
     e.preventDefault();
     this.setState({
@@ -77,24 +68,19 @@ class FileUploadProgress extends React.Component {
     }, this._doUpload);
   }
 
-  render() {
-    const formElement = this.props.formRenderer(this.onSubmit.bind(this));
-    const progessElement = this.props.progressRenderer(
-                            this.state.progress, this.state.hasError, this.cancelUpload.bind(this));
-
-    return (
-      <div>
-        {formElement}
-        {progessElement}
-      </div>
-    );
+  cancelUpload() {
+    this.proxy.emit('abort');
+    this.setState({
+      progress: -1,
+      hasError: false,
+    });
   }
 
   _getFormData() {
     if (this.props.formGetter) {
       return this.props.formGetter();
     }
-    return new FormData(ReactDom.findDOMNode(this.refs.form));
+    return new FormData(this.form);
   }
 
   _doUpload() {
@@ -150,7 +136,26 @@ class FileUploadProgress extends React.Component {
     });
 
     this.props.beforeSend(req)
-              .send(this.props.formCustomizer(form));
+      .send(this.props.formCustomizer(form));
+  }
+
+  render() {
+    const formElement = this.props.formRenderer(
+      e => this.onSubmit(e),
+      (form) => { this.form = form; },
+    );
+    const progressElement = this.props.progressRenderer(
+      this.state.progress,
+      this.state.hasError,
+      e => this.cancelUpload(e),
+    );
+
+    return (
+      <div>
+        {formElement}
+        {progressElement}
+      </div>
+    );
   }
 }
 
@@ -168,14 +173,19 @@ FileUploadProgress.propTypes = {
 };
 
 FileUploadProgress.defaultProps = {
-  formRenderer: (onSubmit) => (
-      <form className="_react_fileupload_form_content" ref="form" method="post" onSubmit={onSubmit}>
-        <div>
-          <input type="file" name="file"/>
-        </div>
-        <input type="submit"/>
-      </form>
-    ),
+  formRenderer: (onSubmit, formRef) => (
+    <form
+      className="_react_fileupload_form_content"
+      ref={formRef}
+      method="post"
+      onSubmit={onSubmit}
+    >
+      <div>
+        <input type="file" name="file" />
+      </div>
+      <input type="submit" />
+    </form>
+  ),
 
   progressRenderer: (progress, hasError, cancelHandler) => {
     if (hasError || progress > -1) {
@@ -194,12 +204,13 @@ FileUploadProgress.defaultProps = {
       return (
         <div className="_react_fileupload_progress_content">
           <div style={styles.progressWrapper}>
-            <div className="_react_fileupload_progress_bar" style={barStyle}></div>
+            <div className="_react_fileupload_progress_bar" style={barStyle} />
           </div>
           <button
-              className="_react_fileupload_progress_cancel"
-              style={styles.cancelButton}
-              onClick={cancelHandler}>
+            className="_react_fileupload_progress_cancel"
+            style={styles.cancelButton}
+            onClick={cancelHandler}
+          >
             <span>&times;</span>
           </button>
           <div style={{ clear: 'left' }}>
@@ -211,12 +222,13 @@ FileUploadProgress.defaultProps = {
     return '';
   },
 
-  formCustomizer: (form) => form,
-  beforeSend: (request) => request,
+  formGetter: null,
+  formCustomizer: form => form,
+  beforeSend: request => request,
   onProgress: (e, request, progress) => {},
   onLoad: (e, request) => {},
   onError: (e, request) => {},
-  onAbort: (e, request) => {}
+  onAbort: (e, request) => {},
 };
 
 export default FileUploadProgress;
